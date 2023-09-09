@@ -1,0 +1,4 @@
+# gitignore for python
+
+__pycache__/
+build/
