@@ -1,4 +1,4 @@
-project(extract_errors) # Replace 'my_project' with the name of your project
+project(extract_errors)
 cmake_minimum_required(VERSION 3.15...3.27)
 find_package(Python 3.8 COMPONENTS Interpreter Development.Module REQUIRED)
 
@@ -54,12 +54,11 @@ endif()
 
 
 
-# Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
 
-# add include dir 
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/simdjson)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/parallel_hashmap)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/parallel-hashmap)
 
 
 nanobind_add_module(
