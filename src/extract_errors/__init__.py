@@ -65,13 +65,15 @@ class Command_ExtractErrors(CommandLinePlugin):
 
         random_sig = sourmash.load_one_signature(args.sig_paths[0], ksize=args.ksize)
         final_mh = random_sig.minhash.copy_and_clear().flatten()
-        finalSig = sourmash.SourmashSignature(final_mh, name="error_kmers", filename=args.out) 
+        
         
         if len(error_kmers) < 1_000_000:
             final_mh.add_many(error_kmers)
+            finalSig = sourmash.SourmashSignature(final_mh, name="error_kmers", filename=args.out) 
             with sourmash.sourmash_args.FileOutput(args.out, 'wt') as fp:
                 sourmash.save_signatures([finalSig], fp=fp)    
         else:
+            finalSig = sourmash.SourmashSignature(final_mh, name="error_kmers", filename=args.out)
             with tempfile.NamedTemporaryFile(delete=False) as temp_file:
                 with sourmash.sourmash_args.FileOutput(temp_file.name, 'wt') as fp:
                     sourmash.save_signatures([finalSig], fp=fp)
