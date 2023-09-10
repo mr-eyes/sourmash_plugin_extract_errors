@@ -68,6 +68,7 @@ class Command_ExtractErrors(CommandLinePlugin):
         finalSig = sourmash.SourmashSignature(final_mh, name="error_kmers", filename=args.out) 
         
         if len(error_kmers) < 1_000_000:
+            final_mh.add_many(error_kmers)
             with sourmash.sourmash_args.FileOutput(args.out, 'wt') as fp:
                 sourmash.save_signatures([finalSig], fp=fp)    
         else:
