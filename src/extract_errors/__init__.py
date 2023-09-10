@@ -12,7 +12,7 @@ def cli():
     argparser = argparse.ArgumentParser()
     argparser.add_argument("-k", "--ksize", type=int, required=True, help="k-mer size")
     argparser.add_argument("-t", "--num-threads", type=int, required=True, help="number of threads")
-    argparser.add_argument("sig_paths", nargs="+", help="signatures to process", required=True)
+    argparser.add_argument("sig_paths", nargs="+", help="signatures to process")
     args = argparser.parse_args()
     
     hashes_counter = HashesCounter(
@@ -45,7 +45,7 @@ class Command_ExtractErrors(CommandLinePlugin):
         subparser.add_argument("sig_paths", nargs="+", help="signatures to process", required=True)
         subparser.add_argument('-k', "--ksize", type=int, required=True, help="k-mer size")
         subparser.add_argument('-t', "--num-threads", type=int, required=True, help="number of threads")
-        subparser.add_argument('-o', "--out", type=str, required=True, help="output signature path")
+        subparser.add_argument('-o', "--out", type=str, help="output signature path")
     
     
     def main(self, args):
