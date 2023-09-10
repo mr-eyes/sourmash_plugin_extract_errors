@@ -45,8 +45,6 @@ private:
     MAP_KMERCOUNTER kmerToCount;
     vector<uint64_t> error_hashes;
     int num_threads;
-    int totalPaths;
-    std::atomic<int> totalProcessed(0);
 
     void count_hashes()
     {
@@ -62,20 +60,6 @@ private:
                     [](MAP_KMERCOUNTER::value_type &v)
                     { v.second += 1; },
                     1);
-            }
-        }
-    }
-
-    void printProgress()
-    {
-        while (true)
-        {
-            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Sleep for 500 milliseconds
-            float progress = (float)totalProcessed.load() / totalPaths * 100.0;
-            std::cout << "Progress: " << progress << "%" << std::endl;
-            if (totalProcessed == totalPaths)
-            {
-                break;
             }
         }
     }
@@ -166,7 +150,6 @@ public:
         }
 
         this->num_threads = num_threads;
-        this->totalPaths = this->sig_paths.size();
     }
 
     void process()
