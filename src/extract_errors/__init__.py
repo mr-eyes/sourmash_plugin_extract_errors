@@ -42,10 +42,10 @@ class Command_ExtractErrors(CommandLinePlugin):
     def __init__(self, subparser):
         super().__init__(subparser)
 
-        subparser.add_argument("sig_paths", nargs="+", help="signatures to process", required=True)
+        subparser.add_argument("sig_paths", nargs="+", help="signatures to process")
         subparser.add_argument('-k', "--ksize", type=int, required=True, help="k-mer size")
         subparser.add_argument('-t', "--num-threads", type=int, required=True, help="number of threads")
-        subparser.add_argument('-o', "--out", type=str, help="output signature path")
+        subparser.add_argument('-o', "--out", type=str, help="output signature path", required=True)
     
     
     def main(self, args):
