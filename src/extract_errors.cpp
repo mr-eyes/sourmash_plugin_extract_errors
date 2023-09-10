@@ -7,10 +7,10 @@
 #include <parallel_hashmap/phmap.h>
 #include <nanobind/stl/vector.h>
 #include <stdexcept>
+#include <omp.h>
 
 using phmap::flat_hash_map;
 using phmap::parallel_flat_hash_map;
-
 
 using MAP_KMERCOUNTER = phmap::parallel_flat_hash_map<
     uint64_t, uint32_t,
@@ -45,6 +45,8 @@ private:
     MAP_KMERCOUNTER kmerToCount;
     vector<uint64_t> error_hashes;
     int num_threads;
+    int totalPaths;
+    std::atomic<int> totalProcessed(0);
 
     void count_hashes()
     {
@@ -64,6 +66,51 @@ private:
         }
     }
 
+    void printProgress()
+    {
+        while (true)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500)); // Sleep for 500 milliseconds
+            float progress = (float)totalProcessed.load() / totalPaths * 100.0;
+            std::cout << "Progress: " << progress << "%" << std::endl;
+            if (totalProcessed == totalPaths)
+            {
+                break;
+            }
+        }
+    }
+
+    void count_hashes_parallel()
+    {
+
+        int thread_num, num_threads, start, end, vec_i;
+        int n = this->sig_paths.size();
+        omp_set_num_threads(this->num_threads);
+
+#pragma omp parallel private(vec_i, thread_num, num_threads, start, end)
+        {
+            thread_num = omp_get_thread_num();
+            num_threads = omp_get_num_threads();
+            start = thread_num * n / num_threads;
+            end = (thread_num + 1) * n / num_threads;
+            for (vec_i = start; vec_i < end; vec_i++)
+            {
+                string sig_path = this->sig_paths[vec_i];
+                vector<uint64_t> hashes;
+                get_hashes_from_sig(sig_path, hashes);
+                for (uint64_t hash_val : hashes)
+                {
+
+                    this->kmerToCount.try_emplace_l(
+                        hash_val,
+                        [](MAP_KMERCOUNTER::value_type &v)
+                        { v.second += 1; },
+                        1);
+                }
+            }
+        }
+    }
+
     void get_hashes_from_sig(std::string sig_path, vector<uint64_t> &hashes)
     {
         ondemand::parser parser;
@@ -71,8 +118,6 @@ private:
         ondemand::document sig = parser.iterate(json);
 
         ondemand::array sketches = sig.get_array();
-
-        cout << "array length: " << sketches.count_elements() << endl;
 
         for (auto sketch : sketches)
         {
@@ -83,7 +128,6 @@ private:
                 int _ksize = (int)signature["ksize"].get_int64();
                 if (this->kSize == _ksize)
                 {
-                    cout << "Found a signature with ksize: " << _ksize << endl;
                     ondemand::array mins = signature["mins"].get_array();
                     for (uint64_t hash_val : mins)
                     {
@@ -122,11 +166,20 @@ public:
         }
 
         this->num_threads = num_threads;
+        this->totalPaths = this->sig_paths.size();
     }
 
     void process()
     {
-        count_hashes();
+        if (this->num_threads > 1)
+        {
+            cerr << "Using " << this->num_threads << " threads" << endl;
+            count_hashes_parallel();
+        }
+        else
+        {
+            count_hashes();
+        }
         extract_errors();
     }
 
@@ -141,5 +194,5 @@ NB_MODULE(_extract_errors_impl, m)
     nb::class_<HashesCounter>(m, "HashesCounter")
         .def(nb::init<int, vector<string>, int>(), "kSize"_a, "sig_paths"_a, "num_threads"_a = 1)
         .def("process", &HashesCounter::process)
-        .def("get_error_hashes", &HashesCounter::get_error_hashes, nb::return_stl_vector());
+        .def("get_error_hashes", &HashesCounter::get_error_hashes);
 }
