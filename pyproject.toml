@@ -5,7 +5,7 @@ build-backend = "scikit_build_core.build"
 
 [project]
 name = "extract_errors"
-version = "0.1"
+version = "0.2"
 description = "Find kmers that appeared once in a pool of signatures"
 readme = "README.md"
 requires-python = ">=3.8"
