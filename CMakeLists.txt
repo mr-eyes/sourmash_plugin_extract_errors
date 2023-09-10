@@ -56,6 +56,7 @@ endif()
 
 find_package(nanobind CONFIG REQUIRED)
 
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -lstdc++fs -fPIC -lgomp -lrt -fopenmp -Ofast")
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/simdjson)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/parallel-hashmap)
@@ -71,7 +72,6 @@ nanobind_add_module(
   src/extract_errors.cpp 
   lib/simdjson/simdjson.cpp
 )
-
 
 
 install(TARGETS _extract_errors_impl LIBRARY DESTINATION extract_errors)

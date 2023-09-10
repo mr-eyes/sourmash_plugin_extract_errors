@@ -12,7 +12,9 @@ requires-python = ">=3.8"
 authors = [{ name = "Mohamed Abuelanin", email = "mabuelanin@gmail.com" }]
 classifiers = ["License :: BSD"]
 
-# dependencies = [""]
+dependencies = [
+    "sourmash>=4.8.0,<5",
+]
 
 [project.urls]
 Homepage = "https://github.com/mr-eyes/sourmash_plugin_extract_errors"
@@ -28,3 +30,6 @@ wheel.py-api = "cp312"
 
 [project.scripts]
 extract_errors = "extract_errors:cli"
+
+[project.entry-points."sourmash.cli_script"]
+extract_errors = "extract_errors:Command_ExtractErrors"
