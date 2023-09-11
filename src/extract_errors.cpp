@@ -45,6 +45,7 @@ private:
     MAP_KMERCOUNTER kmerToCount;
     vector<uint64_t> error_hashes;
     int num_threads;
+    flat_hash_map<uint64_t, bool> errors_map;
 
     void count_hashes()
     {
@@ -131,6 +132,29 @@ private:
                 error_hashes.push_back(pair.first);
             }
         }
+
+        this->kmerToCount.clear();
+    }
+
+    void error_kmers_to_hashmap()
+    {
+        this->errors_map.reserve(this->error_hashes.size());
+        for (uint64_t hash_val : this->error_hashes)
+        {
+            this->errors_map[hash_val] = true;
+        }
+        cout << "Error hashes size: " << this->errors_map.size() << endl;
+    }
+
+    void load_errors_sig(string sig_path)
+    {
+        if (valid_file(sig_path))
+        {
+            // First load the errors sig from file
+            get_hashes_from_sig(sig_path, this->error_hashes);
+            // Populate it to a hashmap and remove the this->error_hashes vector
+            this->error_kmers_to_hashmap();
+        }
     }
 
 public:
@@ -152,7 +176,7 @@ public:
         this->num_threads = num_threads;
     }
 
-    void process()
+    void start_errors_extraction()
     {
         if (this->num_threads > 1)
         {
@@ -170,12 +194,55 @@ public:
     {
         return error_hashes;
     }
+
+    void initialize_sigs_filtration(string sig_path)
+    {
+
+        if (!valid_file(sig_path))
+        {
+            cerr << "initializing sigs filtration" << endl;
+            if (this->error_hashes.size())
+            {
+                this->error_kmers_to_hashmap();
+            }
+            else
+            {
+                throw invalid_argument("Error hashes not loaded, and invalid file path: " + sig_path);
+            }
+        }
+        else
+        {
+            cerr << "loading error sigs" << endl;
+            this->load_errors_sig(sig_path);
+        }
+    }
+
+    vector<uint64_t> filter_sig_return_kmers(string sig_file_path)
+    {
+        // load kmers from sig file
+        vector<uint64_t> hashes;
+        get_hashes_from_sig(sig_file_path, hashes);
+        // remove error hashes
+        vector<uint64_t> filtered_hashes;
+        for (uint64_t hash_val : hashes)
+        {
+            if (this->errors_map[hash_val])
+            {
+                filtered_hashes.emplace_back(hash_val);
+            }
+        }
+        // clean some space
+        hashes.clear();
+        return filtered_hashes;
+    }
 };
 
 NB_MODULE(_extract_errors_impl, m)
 {
     nb::class_<HashesCounter>(m, "HashesCounter")
         .def(nb::init<int, vector<string>, int>(), "kSize"_a, "sig_paths"_a, "num_threads"_a = 1)
-        .def("process", &HashesCounter::process)
-        .def("get_error_hashes", &HashesCounter::get_error_hashes);
+        .def("start_errors_extraction", &HashesCounter::start_errors_extraction)
+        .def("get_error_hashes", &HashesCounter::get_error_hashes)
+        .def("initialize_sigs_filtration", &HashesCounter::initialize_sigs_filtration, "sig_path"_a)
+        .def("filter_sig_return_kmers", &HashesCounter::filter_sig_return_kmers, "sig_file_path"_a);
 }
