@@ -21,7 +21,7 @@ using MAP_KMERCOUNTER = phmap::parallel_flat_hash_map<
     std::hash<uint64_t>,
     std::equal_to<uint64_t>,
     std::allocator<std::pair<uint64_t, uint32_t>>,
-    4, // sub-maps
+    1, // sub-maps
     std::mutex>;
 
 namespace nb = nanobind;
@@ -142,7 +142,7 @@ private:
                     ondemand::array mins = signature["mins"].get_array();
                     for (uint64_t hash_val : mins)
                     {
-                        hashes.emplace_back(hash_val);
+                        hashes.emplace(hash_val);
                     }
                 }
             }
@@ -155,11 +155,9 @@ private:
         {
             if (pair.second == 1)
             {
-                error_hashes.push_back(pair.first);
+                error_hashes.emplace(pair.first);
             }
         }
-
-        this->kmerToCount.clear();
     }
 
     void error_kmers_to_hashmap()
@@ -256,12 +254,23 @@ public:
         {
             if (this->errors_map[hash_val])
             {
-                filtered_hashes.emplace_back(hash_val);
+                filtered_hashes.emplace(hash_val);
             }
         }
         // clean some space
         hashes.clear();
         return filtered_hashes;
+    }
+
+    void dump_kmers_to_file(string file_path)
+    {
+        ofstream out_file(file_path);
+        cerr << "dumping kmers with number: " << this->kmerToCount.size() << endl;
+        for (auto const &pair : kmerToCount)
+        {
+            out_file << pair.first << '\t' << pair.second << endl;
+        }
+        out_file.close();
     }
 };
 
@@ -272,5 +281,6 @@ NB_MODULE(_extract_errors_impl, m)
         .def("start_errors_extraction", &HashesCounter::start_errors_extraction)
         .def("get_error_hashes", &HashesCounter::get_error_hashes)
         .def("initialize_sigs_filtration", &HashesCounter::initialize_sigs_filtration, "sig_path"_a)
-        .def("filter_sig_return_kmers", &HashesCounter::filter_sig_return_kmers, "sig_file_path"_a);
+        .def("filter_sig_return_kmers", &HashesCounter::filter_sig_return_kmers, "sig_file_path"_a)
+        .def("dump_kmers_to_file", &HashesCounter::dump_kmers_to_file, "file_path"_a);
 }
