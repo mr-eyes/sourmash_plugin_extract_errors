@@ -142,7 +142,7 @@ private:
                     ondemand::array mins = signature["mins"].get_array();
                     for (uint64_t hash_val : mins)
                     {
-                        hashes.emplace(hash_val);
+                        hashes.emplace_back(hash_val);
                     }
                 }
             }
@@ -155,7 +155,7 @@ private:
         {
             if (pair.second == 1)
             {
-                error_hashes.emplace(pair.first);
+                error_hashes.emplace_back(pair.first);
             }
         }
     }
@@ -254,7 +254,7 @@ public:
         {
             if (this->errors_map[hash_val])
             {
-                filtered_hashes.emplace(hash_val);
+                filtered_hashes.emplace_back(hash_val);
             }
         }
         // clean some space
