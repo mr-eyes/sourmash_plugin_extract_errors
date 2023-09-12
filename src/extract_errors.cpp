@@ -8,6 +8,10 @@
 #include <nanobind/stl/vector.h>
 #include <stdexcept>
 #include <omp.h>
+#include <nlohmann/json.hpp>
+#include <fstream>
+
+using json = nlohmann::json;
 
 using phmap::flat_hash_map;
 using phmap::parallel_flat_hash_map;
@@ -96,6 +100,28 @@ private:
         }
     }
 
+    void get_hashes_from_large_sig(std::string sigpath, vector<uint64_t> &hashes)
+    {
+
+        std::ifstream sig_stream(sigpath);
+        json data = json::parse(sig_stream);
+
+        for (auto const &sketch : data)
+        {
+            for (auto const &signature : sketch["signatures"])
+            {
+                int _ksize = (int)signature["ksize"];
+                if (this->kSize == _ksize)
+                {
+                    for (auto const &hash_val : signature["mins"])
+                    {
+                        hashes.emplace_back(hash_val);
+                    }
+                }
+            }
+        }
+    }
+
     void get_hashes_from_sig(std::string sig_path, vector<uint64_t> &hashes)
     {
         ondemand::parser parser;
@@ -151,8 +177,10 @@ private:
         if (valid_file(sig_path))
         {
             // First load the errors sig from file
-            get_hashes_from_sig(sig_path, this->error_hashes);
+            cerr << "Loading error hashes from sig file" << endl;
+            get_hashes_from_large_sig(sig_path, this->error_hashes);
             // Populate it to a hashmap and remove the this->error_hashes vector
+            cerr << "Loading error hashes to hashmap" << endl;
             this->error_kmers_to_hashmap();
         }
     }
@@ -212,7 +240,7 @@ public:
         }
         else
         {
-            cerr << "loading error sigs" << endl;
+            cerr << "loading errors sig" << endl;
             this->load_errors_sig(sig_path);
         }
     }
