@@ -252,7 +252,7 @@ public:
         vector<uint64_t> filtered_hashes;
         for (uint64_t hash_val : hashes)
         {
-            if (this->errors_map[hash_val])
+            if (this->errors_map.find(hash_val) == this->errors_map.end())
             {
                 filtered_hashes.emplace_back(hash_val);
             }
